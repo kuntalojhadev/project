@@ -1,4 +1,4 @@
-pip install pandas matplotlib yfinance keras streamlit
+!pip install pandas matplotlib yfinance keras streamlit
 
 
 import numpy as np
