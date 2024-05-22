@@ -1,3 +1,6 @@
+pip install pandas matplotlib yfinance keras streamlit
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
