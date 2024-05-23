@@ -3,99 +3,97 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
 from keras.models import load_model
-import streamlit as st 
+import streamlit as st
+from sklearn.preprocessing import MinMaxScaler
 
+# Define date range
 start = '2014-01-01'
 end = '2024-01-01'
 
+# Streamlit app title
 st.title('Stock Trend Prediction')
 
-user_input = st.text_input('Enter Stock Ticker','AAPL')
-df = yf.download(user_input, start=start, end=end)
-df.head()
+# User input for stock ticker
+user_input = st.text_input('Enter Stock Ticker', 'AAPL')
 
-#Describing Data
+# Download data with yfinance
+try:
+    df = yf.download(user_input, start=start, end=end, progress=False)
+except Exception as e:
+    st.error(f"Failed to fetch data: {e}")
+    st.stop()
+
+# Display data
 st.subheader('Data from 2014-2023')
 st.write(df.describe())
 
-
-#Visualizations
-st.subheader('Colosing Price vs Time Chart')
-fig = plt.figure(figsize=(12,6))
-plt.plot(df.Close)
+# Closing Price vs Time Chart
+st.subheader('Closing Price vs Time Chart')
+fig = plt.figure(figsize=(12, 6))
+plt.plot(df['Close'])
 st.pyplot(fig)
 
-# 100 Days Moving Averages 
-st.subheader('Colosing Price vs Time Chart 100MA')
-ma100 = df.Close.rolling(100).mean()
-fig = plt.figure(figsize=(12,6))
-plt.plot(ma100)
-plt.plot(df.Close)
+# 100 Days Moving Averages
+st.subheader('Closing Price vs Time Chart with 100MA')
+ma100 = df['Close'].rolling(100).mean()
+fig = plt.figure(figsize=(12, 6))
+plt.plot(df['Close'], label='Closing Price')
+plt.plot(ma100, label='100MA')
+plt.legend()
 st.pyplot(fig)
 
-# 200 Days Moving Averages 
-st.subheader('Colosing Price vs Time Chart 100MA & 200MA')
-ma100 = df.Close.rolling(100).mean()
-ma200 = df.Close.rolling(200).mean()
-fig = plt.figure(figsize=(12,6))
-plt.plot(ma100,'r')
-plt.plot(ma200,'g')
-plt.plot(df.Close,'b')
+# 100 and 200 Days Moving Averages
+st.subheader('Closing Price vs Time Chart with 100MA & 200MA')
+ma100 = df['Close'].rolling(100).mean()
+ma200 = df['Close'].rolling(200).mean()
+fig = plt.figure(figsize=(12, 6))
+plt.plot(df['Close'], 'b', label='Closing Price')
+plt.plot(ma100, 'r', label='100MA')
+plt.plot(ma200, 'g', label='200MA')
+plt.legend()
 st.pyplot(fig)
 
-## Spliting Data into training and testing
+# Splitting Data into Training and Testing
+data_training = pd.DataFrame(df['Close'][0:int(len(df) * 0.75)])
+data_testing = pd.DataFrame(df['Close'][int(len(df) * 0.75):])
 
-data_tarining = pd.DataFrame(df['Close'][0:int(len(df)*0.75)])
-data_testing = pd.DataFrame(df['Close'][int(len(df)*0.75):int(len(df))])
+st.write(f'Training Data Shape: {data_training.shape}')
+st.write(f'Testing Data Shape: {data_testing.shape}')
 
-# print(data_tarining)
-# print(data_testing)
-print(data_tarining.shape)
-print(data_testing.shape)
+# Scaling the Data
+scaler = MinMaxScaler(feature_range=(0, 1))
+data_training_array = scaler.fit_transform(data_training)
 
-
-from sklearn.preprocessing import MinMaxScaler
-scaler = MinMaxScaler(feature_range =(0,1))
-
-data_tarining_array = scaler.fit_transform(data_tarining)
-
-
-# Load my model
+# Load the model
 model = load_model('keras_model.h5')
 
-# Testing part
-# Extract the last 100 days of data
-past_100_days = data_tarining.tail(100)
-# Concatenate past_100_days and data_training
+# Preparing Testing Data
+past_100_days = data_training.tail(100)
 final_df = pd.concat([past_100_days, data_testing], ignore_index=True)
-input_data = scaler.fit_transform(final_df)
+input_data = scaler.transform(final_df)
 
-# test part
+# Creating Test Data
 x_test = []
 y_test = []
 
 for i in range(100, input_data.shape[0]):
-  x_test.append(input_data[i-100:i])
-  y_test.append(input_data[i,0])
+    x_test.append(input_data[i-100:i])
+    y_test.append(input_data[i, 0])
 
+x_test, y_test = np.array(x_test), np.array(y_test)
 
-x_test,y_test = np.array(x_test),np.array(y_test)
 # Making Predictions
 y_predicted = model.predict(x_test)
-scaler = scaler.scale_
-
-scale_factor = 1/scaler[0]
-y_predicted = y_predicted * scale_factor
-y_test = y_test * scale_factor
-
+scaler_factor = 1 / scaler.scale_[0]
+y_predicted = y_predicted * scaler_factor
+y_test = y_test * scaler_factor
 
 # Final Graph
 st.subheader('Predictions vs Original')
-fig2 = plt.figure(figsize=(12,6))
-plt.plot(y_test,'b',label = 'Original Price')
-plt.plot(y_predicted,'r',label='Predicted Price' )
+fig2 = plt.figure(figsize=(12, 6))
+plt.plot(y_test, 'b', label='Original Price')
+plt.plot(y_predicted, 'r', label='Predicted Price')
 plt.xlabel('Time')
 plt.ylabel('Price')
 plt.legend()
-# plt.show()
 st.pyplot(fig2)
