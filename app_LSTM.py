@@ -14,7 +14,7 @@ end = '2024-01-01'
 st.title('Stock Trend Prediction')
 
 # User input for stock ticker
-user_input = st.text_input('Enter Stock Ticker', 'AAPL')
+user_input = st.text_input('Enter Stock Ticker', 'TSLA')
 
 # Download data with yfinance
 try:
