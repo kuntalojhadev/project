@@ -83,9 +83,8 @@ for i in range(100, input_data.shape[0]):
 x_test, y_test = np.array(x_test), np.array(y_test)
 
 # Making Predictions
-# To avoid large output, suppress unnecessary prints
 try:
-    y_predicted = model.predict(x_test)
+    y_predicted = model.predict(x_test, verbose=0)  # Set verbose to 0 to reduce output
 except Exception as e:
     st.error(f"Prediction error: {e}")
     st.stop()
