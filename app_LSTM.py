@@ -83,7 +83,13 @@ for i in range(100, input_data.shape[0]):
 x_test, y_test = np.array(x_test), np.array(y_test)
 
 # Making Predictions
-y_predicted = model.predict(x_test)
+# To avoid large output, suppress unnecessary prints
+try:
+    y_predicted = model.predict(x_test)
+except Exception as e:
+    st.error(f"Prediction error: {e}")
+    st.stop()
+
 scaler_factor = 1 / scaler.scale_[0]
 y_predicted = y_predicted * scaler_factor
 y_test = y_test * scaler_factor
